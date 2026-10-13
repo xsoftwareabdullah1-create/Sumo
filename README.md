@@ -1,14 +1,29 @@
-# Sumo WinDesk
+# SUMO WinDesk
 
-Landscape Android desktop launcher with touch-following pointer, EXE selection, Winlator launcher, and Termux/Codex launcher.
+SUMO WinDesk is a landscape Android desktop shell with a touch-following cursor, a private EXE library, Android file-picker import, and support for receiving shared `.exe` files.
 
-## Runtime note
-This project is the Android launcher layer. It does NOT embed the Winlator/Wine/Box64 runtime. Real Windows EXE execution is handled by a separately installed compatible Winlator build. The selected document is not automatically injected into Winlator because there is no stable public cross-fork launch-intent contract; use Winlator's file manager/shared storage to launch it. The visible pointer follows touch; a connected hardware mouse uses Android's native pointer.
+## Current functionality
 
-- Winlator source: https://github.com/brunodev85/winlator
-- Codex CLI: https://github.com/openai/codex
+- Landscape-first desktop layout.
+- Import an `.exe` through Android's Storage Access Framework.
+- Receive supported `.exe` share/open intents.
+- Copy imported files into SUMO's private app storage so they remain available across app restarts.
+- List imported files, show their sizes, and delete them from the library.
+- GitHub Actions builds a debug APK on pushes to `main`.
 
-## Build APK
-GitHub Actions builds a debug APK on pushes to main and can be run manually. Open Actions, choose Build Sumo WinDesk APK, then download artifact Sumo-WinDesk-debug-apk after a successful run. Install app-debug.apk on Android. Install Winlator separately for EXE execution and Termux separately for Codex CLI.
+## Important runtime limitation
 
-Local requirements: JDK 17, Android SDK Platform 35, Gradle 8.9-compatible tooling.
+**SUMO does not yet install or execute Windows programs.** The EXE library is only file management; it is not a Windows compatibility layer. This repository does not yet contain Wine, Box86/Box64, a Windows filesystem/container, or the native runtime integration required to run installers. Imported files must not be described as installed or executed.
+
+The next major engineering phase is to integrate and maintain a compatible open-source Windows runtime for supported Android CPU architectures, then implement a persistent virtual Windows prefix, process launching, graphics/input/audio, and installer testing. This is a substantial native project, not a Java-only button or manifest change. Compatibility will vary by EXE and device.
+
+## Build the APK
+
+GitHub Actions builds a debug APK on pushes to `main`. Open the repository's Actions tab, choose **Build Sumo WinDesk APK**, and download the `Sumo-WinDesk-debug-apk` artifact from a successful run. Install the contained `app-debug.apk` on Android.
+
+## Project links
+
+- Repository: https://github.com/xsoftwareabdullah1-create/Sumo
+- Wine: https://www.winehq.org/
+- Winlator (reference architecture/runtime project): https://github.com/brunodev85/winlator
+- Codex CLI (separate Termux workflow): https://github.com/openai/codex

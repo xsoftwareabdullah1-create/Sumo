@@ -15,11 +15,38 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.IOException;
 
 public class MainActivity extends Activity {
  private final int bg=Color.rgb(7,12,25), panel=Color.rgb(17,29,49), cyan=Color.rgb(64,220,255);
  private FrameLayout desktop; private View pointer; private TextView selectedFile; private Uri selectedUri;
- @Override public void onCreate(Bundle state){super.onCreate(state);getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(bg);getWindow().setFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);buildDesktop();}
+ @Override public void onCreate(Bundle state){super.onCreate(state);getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(bg);getWindow().setFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);buildDesktop();handleIncomingIntent(getIntent());}
+ @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);handleIncomingIntent(intent);}
+ private void handleIncomingIntent(Intent intent){
+  if(intent==null)return;
+  Uri uri=intent.getData();
+  if(uri==null && Intent.ACTION_SEND.equals(intent.getAction())){
+   android.os.Parcelable extra=intent.getParcelableExtra(Intent.EXTRA_STREAM);
+   if(extra instanceof Uri)uri=(Uri)extra;
+  }
+  if(uri==null || !(Intent.ACTION_VIEW.equals(intent.getAction()) || Intent.ACTION_SEND.equals(intent.getAction())))return;
+  selectedUri=uri;
+  String name=uri.getLastPathSegment();
+  if(name==null || !name.toLowerCase(java.util.Locale.ROOT).endsWith(".exe")){toast("SUMO received a file, but its name does not end in .exe.");return;}
+  try(InputStream in=getContentResolver().openInputStream(uri)){
+   if(in==null)throw new IOException("Cannot read selected file");
+   File dir=new File(getFilesDir(),"incoming-exe");
+   if(!dir.exists()&&!dir.mkdirs())throw new IOException("Cannot create private import folder");
+   String safe=name.replaceAll("[^A-Za-z0-9._-]","_");
+   File out=new File(dir,safe);
+   try(FileOutputStream stream=new FileOutputStream(out)){byte[] buffer=new byte[65536];int n;while((n=in.read(buffer))!=-1)stream.write(buffer,0,n);}
+   selectedFile.setText("Received EXE: "+safe+"\\nSaved privately in SUMO.\\nExecution engine is not integrated yet; this file has not been installed or run.");
+   toast("EXE received by SUMO. Runner engine is still under development.");
+  }catch(Exception e){selectedFile.setText("Could not import EXE: "+e.getMessage());toast("Could not read the shared EXE file.");}
+ }
  private void buildDesktop(){
   desktop=new FrameLayout(this); desktop.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{Color.rgb(7,15,39),Color.rgb(12,42,72),Color.rgb(6,12,26)}));
   LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);content.setPadding(dp(24),dp(16),dp(24),dp(16));desktop.addView(content,new FrameLayout.LayoutParams(-1,-1));

@@ -3,6 +3,9 @@ package dev.sumo.windesk;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
@@ -168,22 +171,65 @@ public class MainActivity extends Activity {
         TextView clock = label("SUMO  •  Android", 10, Color.WHITE, false);
         taskbar.addView(clock);
 
-        pointer = new View(this);
-        pointer.setBackground(round(Color.WHITE, dp(1), Color.BLACK));
-        FrameLayout.LayoutParams pp = new FrameLayout.LayoutParams(dp(8), dp(13));
+        pointer = new MousePointerView();
+        FrameLayout.LayoutParams pp = new FrameLayout.LayoutParams(dp(28), dp(34));
         pp.leftMargin = dp(30);
         pp.topMargin = dp(40);
         desktop.addView(pointer, pp);
-        desktop.setOnTouchListener((v, e) -> {
-            if (pointer != null && (e.getAction() == MotionEvent.ACTION_MOVE || e.getAction() == MotionEvent.ACTION_DOWN)) {
+        setContentView(desktop);
+    }
+
+
+    @Override public boolean dispatchTouchEvent(MotionEvent event) {
+        if (pointer != null && desktop != null) {
+            int action = event.getActionMasked();
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE || action == MotionEvent.ACTION_UP) {
+                int[] location = new int[2];
+                desktop.getLocationOnScreen(location);
+                int maxX = Math.max(0, desktop.getWidth() - dp(28));
+                int maxY = Math.max(0, desktop.getHeight() - dp(34));
                 FrameLayout.LayoutParams p = (FrameLayout.LayoutParams) pointer.getLayoutParams();
-                p.leftMargin = Math.max(0, (int)e.getX());
-                p.topMargin = Math.max(0, (int)e.getY());
+                p.leftMargin = Math.max(0, Math.min((int) event.getRawX() - location[0], maxX));
+                p.topMargin = Math.max(0, Math.min((int) event.getRawY() - location[1], maxY));
                 pointer.setLayoutParams(p);
             }
-            return false;
-        });
-        setContentView(desktop);
+        }
+        return super.dispatchTouchEvent(event);
+    }
+
+    private final class MousePointerView extends View {
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path arrow = new Path();
+
+        MousePointerView() {
+            super(MainActivity.this);
+            setElevation(dp(24));
+            setClickable(false);
+            setFocusable(false);
+        }
+
+        @Override protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            canvas.save();
+            canvas.scale(getWidth() / 28f, getHeight() / 34f);
+            arrow.reset();
+            arrow.moveTo(2, 1);
+            arrow.lineTo(2, 26);
+            arrow.lineTo(8, 20);
+            arrow.lineTo(13, 31);
+            arrow.lineTo(18, 28);
+            arrow.lineTo(13, 17);
+            arrow.lineTo(23, 17);
+            arrow.close();
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(3f);
+            paint.setColor(Color.BLACK);
+            canvas.drawPath(arrow, paint);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.WHITE);
+            canvas.drawPath(arrow, paint);
+            canvas.restore();
+        }
     }
 
     private void addDesktopShortcut(LinearLayout parent, String glyph, String title, View.OnClickListener click) {

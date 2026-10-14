@@ -54,70 +54,125 @@ public class MainActivity extends Activity {
 
     private void buildDesktop() {
         desktop = new FrameLayout(this);
+        // Windows 10-inspired desktop wallpaper: sunset gradient with a glowing window motif.
         desktop.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{Color.rgb(4, 14, 38), Color.rgb(9, 39, 68), Color.rgb(3, 8, 19)}));
+                new int[]{Color.rgb(245, 128, 145), Color.rgb(170, 91, 179), Color.rgb(49, 84, 168), Color.rgb(15, 28, 75)}));
 
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(24), dp(15), dp(24), dp(12));
-        desktop.addView(root, new FrameLayout.LayoutParams(-1, -1));
+        LinearLayout wallpaper = new LinearLayout(this);
+        wallpaper.setOrientation(LinearLayout.VERTICAL);
+        wallpaper.setPadding(dp(12), dp(8), dp(12), dp(42));
+        desktop.addView(wallpaper, new FrameLayout.LayoutParams(-1, -1));
 
-        LinearLayout top = new LinearLayout(this);
-        top.setOrientation(LinearLayout.HORIZONTAL);
-        top.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        root.addView(top, new LinearLayout.LayoutParams(-1, -2));
-        TextView logo = label("S U M O", 21, cyan, true);
-        top.addView(logo, new LinearLayout.LayoutParams(0, -2, 1));
-        top.addView(label("WINDESK  •  ANDROID DESKTOP", 11, Color.rgb(151, 190, 220), true));
+        // Desktop shortcut rail.
+        LinearLayout shortcuts = new LinearLayout(this);
+        shortcuts.setOrientation(LinearLayout.VERTICAL);
+        shortcuts.setGravity(android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL);
+        wallpaper.addView(shortcuts, new LinearLayout.LayoutParams(dp(74), -1));
+        addDesktopShortcut(shortcuts, "▣", "This PC", v -> showLibraryWindow());
+        addDesktopShortcut(shortcuts, "◎", "Browser", v -> showBrowserWindow());
+        addDesktopShortcut(shortcuts, "▤", "SUMO EXE", v -> pickExe());
+        addDesktopShortcut(shortcuts, "⚙", "Settings", v -> showStatus("SUMO settings • Android desktop mode"));
 
-        TextView title = label("Your Windows workspace", 28, Color.WHITE, true);
-        title.setPadding(0, dp(12), 0, dp(3));
-        root.addView(title);
-        root.addView(label("Import .EXE files into your private SUMO library", 13, Color.rgb(171, 201, 224), false));
+        // Main window styled like a desktop browser, similar to the reference recording.
+        LinearLayout window = new LinearLayout(this);
+        window.setOrientation(LinearLayout.VERTICAL);
+        window.setBackground(round(Color.rgb(248, 249, 252), dp(8), Color.rgb(215, 219, 229)));
+        FrameLayout.LayoutParams wp = new FrameLayout.LayoutParams(
+                (int)(getResources().getDisplayMetrics().widthPixels * 0.72f),
+                (int)(getResources().getDisplayMetrics().heightPixels * 0.76f),
+                android.view.Gravity.CENTER);
+        desktop.addView(window, wp);
 
-        LinearLayout actions = new LinearLayout(this);
-        actions.setOrientation(LinearLayout.HORIZONTAL);
-        actions.setPadding(0, dp(16), 0, dp(12));
-        root.addView(actions, new LinearLayout.LayoutParams(-1, -2));
-        actions.addView(actionCard("01  /  IMPORT", "Choose a Windows installer or program from Downloads.", "IMPORT EXE", v -> pickExe()),
-                new LinearLayout.LayoutParams(0, dp(120), 1));
-        View gap = new View(this);
-        actions.addView(gap, new LinearLayout.LayoutParams(dp(12), 1));
-        actions.addView(actionCard("02  /  LIBRARY", "Your imported files stay in SUMO app storage.", "REFRESH LIST", v -> refreshLibrary()),
-                new LinearLayout.LayoutParams(0, dp(120), 1));
-        View gap2 = new View(this);
-        actions.addView(gap2, new LinearLayout.LayoutParams(dp(12), 1));
-        actions.addView(actionCard("03  /  ENGINE", "Windows compatibility runtime is not integrated yet.", "ENGINE STATUS", v ->
-                showStatus("Runner engine pending: SUMO can import and keep EXE files, but cannot install or execute Windows programs yet.")),
-                new LinearLayout.LayoutParams(0, dp(120), 1));
+        LinearLayout titlebar = new LinearLayout(this);
+        titlebar.setOrientation(LinearLayout.HORIZONTAL);
+        titlebar.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        titlebar.setPadding(dp(12), 0, dp(8), 0);
+        titlebar.setBackgroundColor(Color.rgb(238, 240, 246));
+        window.addView(titlebar, new LinearLayout.LayoutParams(-1, dp(36)));
+        titlebar.addView(label("🌐  Browser  —  SUMO Desktop", 12, Color.rgb(45, 48, 58), false),
+                new LinearLayout.LayoutParams(0, -2, 1));
+        TextView minimize = label("—    □    ×", 15, Color.rgb(60, 60, 70), false);
+        titlebar.addView(minimize);
 
-        LinearLayout libraryPanel = new LinearLayout(this);
-        libraryPanel.setOrientation(LinearLayout.VERTICAL);
-        libraryPanel.setPadding(dp(15), dp(10), dp(15), dp(8));
-        libraryPanel.setBackground(round(panel, dp(13), Color.rgb(34, 69, 99)));
-        root.addView(libraryPanel, new LinearLayout.LayoutParams(-1, 0, 1));
-        TextView libTitle = label("EXE LIBRARY", 12, cyan, true);
-        libraryPanel.addView(libTitle);
-        ScrollView scroll = new ScrollView(this);
-        libraryPanel.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
-        library = new LinearLayout(this);
-        library.setOrientation(LinearLayout.VERTICAL);
-        scroll.addView(library);
+        LinearLayout addressbar = new LinearLayout(this);
+        addressbar.setOrientation(LinearLayout.HORIZONTAL);
+        addressbar.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        addressbar.setPadding(dp(10), dp(5), dp(10), dp(5));
+        window.addView(addressbar, new LinearLayout.LayoutParams(-1, dp(43)));
+        addressbar.addView(label("←   →   ⟳", 15, Color.DKGRAY, false));
+        TextView address = label("  🔒  https://www.google.com", 12, Color.rgb(75, 78, 88), false);
+        address.setPadding(dp(12), dp(8), dp(12), dp(8));
+        address.setBackground(round(Color.WHITE, dp(18), Color.rgb(220, 223, 230)));
+        LinearLayout.LayoutParams ap = new LinearLayout.LayoutParams(0, -1, 1);
+        ap.leftMargin = dp(10);
+        addressbar.addView(address, ap);
 
-        status = label("Ready • Import a trusted .exe file to get started.", 12, Color.WHITE, false);
-        status.setPadding(dp(12), dp(10), dp(12), dp(10));
-        status.setBackground(round(Color.rgb(9, 20, 35), dp(8), Color.rgb(33, 68, 96)));
-        LinearLayout.LayoutParams statusParams = new LinearLayout.LayoutParams(-1, -2);
-        statusParams.topMargin = dp(10);
-        root.addView(status, statusParams);
-        root.addView(label("SUMO is an Android app, not Windows itself. EXE execution requires a compatible runtime.", 10,
-                Color.rgb(140, 174, 202), false));
+        LinearLayout page = new LinearLayout(this);
+        page.setOrientation(LinearLayout.VERTICAL);
+        page.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        page.setPadding(dp(18), dp(10), dp(18), dp(8));
+        page.setBackgroundColor(Color.WHITE);
+        window.addView(page, new LinearLayout.LayoutParams(-1, 0, 1));
+        TextView google = label("Google", 30, Color.rgb(66, 133, 244), true);
+        google.setGravity(android.view.Gravity.CENTER);
+        page.addView(google);
+        TextView search = label("⌕   Search the web or enter a URL", 13, Color.rgb(90, 95, 105), false);
+        search.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        search.setPadding(dp(18), 0, dp(18), 0);
+        search.setBackground(round(Color.WHITE, dp(24), Color.rgb(220, 223, 230)));
+        LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams((int)(getResources().getDisplayMetrics().widthPixels * 0.43f), dp(42));
+        sp.topMargin = dp(12);
+        page.addView(search, sp);
+        search.setOnClickListener(v -> showBrowserWindow());
+        TextView helper = label("SUMO desktop preview • Tap desktop icons to open tools", 11, Color.rgb(100, 105, 115), false);
+        helper.setPadding(0, dp(10), 0, dp(4));
+        page.addView(helper);
+
+        LinearLayout quick = new LinearLayout(this);
+        quick.setOrientation(LinearLayout.HORIZONTAL);
+        quick.setGravity(android.view.Gravity.CENTER);
+        page.addView(quick, new LinearLayout.LayoutParams(-1, dp(46)));
+        Button importButton = new Button(this);
+        importButton.setText("＋ Import EXE");
+        importButton.setAllCaps(false);
+        importButton.setTextSize(11);
+        importButton.setOnClickListener(v -> pickExe());
+        quick.addView(importButton);
+        Button libraryButton = new Button(this);
+        libraryButton.setText("▣ EXE Library");
+        libraryButton.setAllCaps(false);
+        libraryButton.setTextSize(11);
+        libraryButton.setOnClickListener(v -> showLibraryWindow());
+        quick.addView(libraryButton);
+        Button engineButton = new Button(this);
+        engineButton.setText("⚙ Engine");
+        engineButton.setAllCaps(false);
+        engineButton.setTextSize(11);
+        engineButton.setOnClickListener(v -> showStatus("Runtime status: EXE files can be imported and stored. A Windows compatibility engine is not integrated yet."));
+        quick.addView(engineButton);
+
+        // Bottom taskbar.
+        LinearLayout taskbar = new LinearLayout(this);
+        taskbar.setOrientation(LinearLayout.HORIZONTAL);
+        taskbar.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        taskbar.setPadding(dp(10), 0, dp(12), 0);
+        taskbar.setBackgroundColor(Color.rgb(25, 31, 49));
+        FrameLayout.LayoutParams tp = new FrameLayout.LayoutParams(-1, dp(38), android.view.Gravity.BOTTOM);
+        desktop.addView(taskbar, tp);
+        TextView start = label("⊞", 24, Color.WHITE, true);
+        start.setGravity(android.view.Gravity.CENTER);
+        taskbar.addView(start, new LinearLayout.LayoutParams(dp(42), -1));
+        start.setOnClickListener(v -> showStartMenu());
+        TextView task = label("  ⌕  Search    |    🌐 Browser    |    ▣ This PC", 12, Color.WHITE, false);
+        taskbar.addView(task, new LinearLayout.LayoutParams(0, -1, 1));
+        TextView clock = label("SUMO  •  Android", 10, Color.WHITE, false);
+        taskbar.addView(clock);
 
         pointer = new View(this);
-        pointer.setBackground(round(cyan, dp(4), Color.WHITE));
-        FrameLayout.LayoutParams pp = new FrameLayout.LayoutParams(dp(9), dp(9));
-        pp.leftMargin = dp(18);
-        pp.topMargin = dp(70);
+        pointer.setBackground(round(Color.WHITE, dp(1), Color.BLACK));
+        FrameLayout.LayoutParams pp = new FrameLayout.LayoutParams(dp(8), dp(13));
+        pp.leftMargin = dp(30);
+        pp.topMargin = dp(40);
         desktop.addView(pointer, pp);
         desktop.setOnTouchListener((v, e) -> {
             if (pointer != null && (e.getAction() == MotionEvent.ACTION_MOVE || e.getAction() == MotionEvent.ACTION_DOWN)) {
@@ -129,6 +184,56 @@ public class MainActivity extends Activity {
             return false;
         });
         setContentView(desktop);
+    }
+
+    private void addDesktopShortcut(LinearLayout parent, String glyph, String title, View.OnClickListener click) {
+        LinearLayout item = new LinearLayout(this);
+        item.setOrientation(LinearLayout.VERTICAL);
+        item.setGravity(android.view.Gravity.CENTER);
+        item.setPadding(dp(2), dp(5), dp(2), dp(5));
+        TextView icon = label(glyph, 26, Color.WHITE, true);
+        icon.setGravity(android.view.Gravity.CENTER);
+        item.addView(icon, new LinearLayout.LayoutParams(-1, dp(32)));
+        TextView text = label(title, 10, Color.WHITE, true);
+        text.setGravity(android.view.Gravity.CENTER);
+        item.addView(text);
+        item.setOnClickListener(click);
+        parent.addView(item, new LinearLayout.LayoutParams(-1, dp(63)));
+    }
+
+    private void showLibraryWindow() {
+        if (libraryDir == null) libraryDir = new File(getFilesDir(), "incoming-exe");
+        File[] files = libraryDir.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".exe"));
+        StringBuilder message = new StringBuilder("Files saved privately inside SUMO:\n\n");
+        if (files == null || files.length == 0) message.append("This folder is empty. Import a trusted .exe file first.");
+        else {
+            for (File file : files) message.append("▣  ").append(file.getName()).append("  •  ").append(formatSize(file.length())).append('\n');
+            message.append("\nNote: files are stored, not executed. Windows runtime is not integrated yet.");
+        }
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("This PC  ›  SUMO EXE Library")
+                .setMessage(message.toString())
+                .setPositiveButton("Import EXE", (d, w) -> pickExe())
+                .setNeutralButton("Refresh", (d, w) -> refreshLibrary())
+                .setNegativeButton("Close", null).show();
+    }
+
+    private void showBrowserWindow() {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Browser")
+                .setMessage("Browser window preview\n\nIn this desktop build, the browser area is a UI simulation. Real web browsing and running Windows applications are not yet connected.")
+                .setPositiveButton("OK", null).show();
+    }
+
+    private void showStartMenu() {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Start")
+                .setItems(new String[]{"This PC / EXE Library", "Import EXE", "Browser", "Engine status"}, (d, which) -> {
+                    if (which == 0) showLibraryWindow();
+                    else if (which == 1) pickExe();
+                    else if (which == 2) showBrowserWindow();
+                    else showStatus("Runtime status: no Windows execution engine is integrated yet.");
+                }).show();
     }
 
     private View actionCard(String head, String body, String buttonText, View.OnClickListener listener) {
